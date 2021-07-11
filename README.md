@@ -8,7 +8,7 @@ Creating a JWT is simple. The `New(...)` function takes a single argument, the c
 
 ```go
 // Create a new JWT token
-token, err := jwt.New(testClaims{
+token, err := jwt.New(myClaims{
     Name: "John Smith",
     Age:  10,
 })
@@ -37,3 +37,7 @@ Verifying that a JWT is genuine and was signed by a known secret:
 ```go
 verified := parsedToken.Verify(SECRET)
 ```
+
+## Notes
+
+This library implements the "HS256" signature algorithm (HMAC SHA256). This is sufficient for most needs, but other signing options can be easily added. Anyone who wants to do this is welcome to submit a pull request, and we'll review it promptly.
