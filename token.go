@@ -10,7 +10,6 @@ import (
 var (
 	ErrMalformedJwtTokenString  = errors.New("malformed JWT token string")
 	ErrInvalidJwtTokenSignature = errors.New("invalid JWT token signature")
-	ErrCannotUnmarshalJwtClaims = errors.New("cannot unmarshal claims from newly created token")
 )
 
 // Claims is a type alias that represents the payload data included
@@ -32,8 +31,10 @@ type Token struct {
 }
 
 // New constructs a new token with a set of claims
-func New(claims Claims) *Token {
-	return &Token{
+func New(claims Claims) (*Token, error) {
+
+	// Create the token instance
+	token := Token{
 		header: Header{
 			Alg: "HS256",
 			Typ: "JWT",
@@ -41,16 +42,32 @@ func New(claims Claims) *Token {
 		claims:    claims,
 		parsedCtx: nil,
 	}
+
+	// Get the header JSON string
+	headerJSON, err := json.Marshal(token.header)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the claims JSON string
+	claimsJSON, err := json.Marshal(token.claims)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the parsed token context
+	token.parsedCtx = &parsedTokenContext{
+		HeaderBase64: base64.URLEncoding.EncodeToString(headerJSON),
+		ClaimsBase64: base64.URLEncoding.EncodeToString(claimsJSON),
+	}
+
+	// Return the token
+	return &token, nil
+
 }
 
-// ParseAndVerify parses AND verifies a JWT token string using the provided secret.
-// If the signature is invalid, the parsed token will still be returned, but an error
-// will also be returned. If some other kind of error occurs than simply a verification
-// error, nil will be returned in the place of the token.
-func ParseAndVerify(
-	str string,
-	secret []byte,
-) (*Token, error) {
+// Parse parses a JWT string into a token instance
+func Parse(str string) (*Token, error) {
 
 	// Split up the string into three parts
 	parts := strings.Split(str, ".")
@@ -80,59 +97,26 @@ func ParseAndVerify(
 		return nil, err
 	}
 
-	// If there is a secret provided, and it's invalid
-	if secret != nil && !token.parsedCtx.Verify(secret) {
-		return &token, ErrInvalidJwtTokenSignature
-	}
-
 	// Return the token instance
 	return &token, nil
 
 }
 
-// Parse parses and does NOT verify a JWT token string
-func Parse(str string) (*Token, error) {
-	return ParseAndVerify(str, nil)
-}
-
 // SignedString formats the JWT token as a string, signed by the secret provided. For best security,
 // the secret should be 256 bits.
-func (t *Token) SignedString(secret []byte) (string, error) {
-
-	// Get the header JSON string
-	header, err := json.Marshal(t.header)
-	if err != nil {
-		return "", err
-	}
-
-	// Get the claims JSON string
-	claims, err := json.Marshal(t.claims)
-	if err != nil {
-		return "", err
-	}
-
-	// Create the parsed token context
-	ctx := parsedTokenContext{
-		HeaderBase64: base64.URLEncoding.EncodeToString(header),
-		ClaimsBase64: base64.URLEncoding.EncodeToString(claims),
-	}
+func (t *Token) SignedString(secret []byte) string {
 
 	// Return the combined parts
 	return strings.Join([]string{
-		ctx.HeaderBase64,
-		ctx.ClaimsBase64,
-		ctx.Sign(secret),
-	}, "."), nil
+		t.parsedCtx.HeaderBase64,
+		t.parsedCtx.ClaimsBase64,
+		t.parsedCtx.Sign(secret),
+	}, ".")
 
 }
 
 // Claims unmarshals the token claims into the provided destination.
 func (t *Token) Claims(claims interface{}) error {
-
-	// If there is no parsed context
-	if t.parsedCtx == nil {
-		return ErrCannotUnmarshalJwtClaims
-	}
 
 	// Decode the claims from base64
 	claimsJSON, err := base64.URLEncoding.DecodeString(t.parsedCtx.ClaimsBase64)
@@ -142,4 +126,10 @@ func (t *Token) Claims(claims interface{}) error {
 
 	// Unmarshal the JSON into the destination
 	return json.Unmarshal(claimsJSON, claims)
+
+}
+
+// Verify verifies the token signature against a secret key
+func (t *Token) Verify(secret []byte) bool {
+	return t.parsedCtx.Verify(secret)
 }

@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"errors"
 	"testing"
 )
 
@@ -18,21 +17,24 @@ var (
 func TestToken(t *testing.T) {
 
 	// Create a new token
-	token := New(testClaims{
+	token, err := New(testClaims{
 		Name: "John Smith",
 		Age:  10,
 	})
-
-	// Create the signed string for the token
-	tokenStr, err := token.SignedString(Secret1)
 	if err != nil {
 		t.Error(err)
 	}
 
+	// Create the signed string for the token
+	tokenStr := token.SignedString(Secret1)
+
 	// Parse the token
-	parsedToken, err := ParseAndVerify(tokenStr, Secret1)
+	parsedToken, err := Parse(tokenStr)
 	if err != nil {
 		t.Error(err)
+	}
+	if !parsedToken.Verify(Secret1) {
+		t.Fatal("Failed to validate parsed token using original secret")
 	}
 
 	// Unmarshal the claims
@@ -46,13 +48,15 @@ func TestToken(t *testing.T) {
 		t.Fatal("Parsed claim is not identical to original claims")
 	}
 
-	// Parse the token string against an invalid secret string
-	_, err = ParseAndVerify(tokenStr, Secret2)
-	if err == nil {
-		t.Fatal("ParseAndVerify reported true when false was expected")
-	}
-	if err != nil && !errors.Is(err, ErrInvalidJwtTokenSignature) {
+	// Parse the token string
+	badParsedToken, err := Parse(tokenStr)
+	if err != nil {
 		t.Error(err)
+	}
+
+	// Validate the token against an invalid secret string
+	if badParsedToken.Verify(Secret2) {
+		t.Fatal("Verification passed for invalid secret key")
 	}
 
 }

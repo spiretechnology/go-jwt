@@ -8,24 +8,32 @@ Creating a JWT is simple. The `New(...)` function takes a single argument, the c
 
 ```go
 // Create a new JWT token
-token := jwt.New(testClaims{
+token, err := jwt.New(testClaims{
     Name: "John Smith",
     Age:  10,
 })
 
 // Create the signed string for the token
-tokenStr, err := token.SignedString(SECRET)
+tokenStr := token.SignedString(SECRET)
 ```
 
 ### Parsing a JWT
 
-Parsing a JWT from a string into a `jwt.Token` instance is equally simple:
+Parsing a JWT from a string into a `jwt.Token` instance:
 
 ```go
 // Parse the token
-parsedToken, err := ParseAndVerify(tokenStr, SECRET)
+parsedToken, err := Parse(tokenStr)
 
 // Unmarshal the claims
 var claims testClaims
 err := parsedToken.Claims(&claims)
+```
+
+### Verifying a JWT
+
+Verifying that a JWT is genuine and was signed by a known secret:
+
+```go
+verified := parsedToken.Verify(SECRET)
 ```
