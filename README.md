@@ -23,7 +23,7 @@ Parsing a JWT from a string into a `jwt.Token` instance:
 
 ```go
 // Parse the token
-parsedToken, err := Parse(tokenStr)
+parsedToken, err := jwt.Parse(tokenStr)
 
 // Unmarshal the claims
 var claims testClaims
