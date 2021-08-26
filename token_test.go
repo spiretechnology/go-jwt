@@ -28,6 +28,11 @@ func TestToken(t *testing.T) {
 	// Create the signed string for the token
 	tokenStr := token.SignedString(Secret1)
 
+	// Check that the token string is what it's supposed to be
+	if tokenStr != "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBTbWl0aCIsImFnZSI6MTB9.RIUN1LTlYDPrN74i_9yT-UAsZ_f1kKI02jgWmLfys94" {
+		t.Fatal("Incorrect signed token string")
+	}
+
 	// Parse the token
 	parsedToken, err := Parse(tokenStr)
 	if err != nil {
