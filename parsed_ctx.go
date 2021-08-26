@@ -14,13 +14,17 @@ type parsedTokenContext struct {
 
 func (ctx *parsedTokenContext) Sign(secret []byte) string {
 
+	// Convert the secret to a base64 buffer
+	secretBytes := make([]byte, base64.RawURLEncoding.EncodedLen(len(secret)))
+	base64.RawURLEncoding.Encode(secretBytes, secret)
+
 	// Calculate the signature
 	hmacSha256 := hmac.New(sha256.New, secret)
-	signature := hmacSha256.Sum([]byte(ctx.HeaderBase64 + "." + ctx.ClaimsBase64))
-	signatureBase64 := base64.URLEncoding.EncodeToString(signature)
+	hmacSha256.Write([]byte(ctx.HeaderBase64 + "." + ctx.ClaimsBase64))
+	signature := hmacSha256.Sum(nil)
 
-	// Return the signature
-	return signatureBase64
+	// Return the signature as a base64 encoded string
+	return base64.RawURLEncoding.EncodeToString(signature)
 
 }
 

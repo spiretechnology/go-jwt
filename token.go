@@ -57,8 +57,8 @@ func New(claims Claims) (*Token, error) {
 
 	// Create the parsed token context
 	token.parsedCtx = &parsedTokenContext{
-		HeaderBase64: base64.URLEncoding.EncodeToString(headerJSON),
-		ClaimsBase64: base64.URLEncoding.EncodeToString(claimsJSON),
+		HeaderBase64: base64.RawURLEncoding.EncodeToString(headerJSON),
+		ClaimsBase64: base64.RawURLEncoding.EncodeToString(claimsJSON),
 	}
 
 	// Return the token
@@ -76,7 +76,7 @@ func Parse(str string) (*Token, error) {
 	}
 
 	// Decode the header from base64
-	headerJSON, err := base64.URLEncoding.DecodeString(parts[0])
+	headerJSON, err := base64.RawURLEncoding.DecodeString(parts[0])
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (t *Token) SignedString(secret []byte) string {
 func (t *Token) Claims(claims interface{}) error {
 
 	// Decode the claims from base64
-	claimsJSON, err := base64.URLEncoding.DecodeString(t.parsedCtx.ClaimsBase64)
+	claimsJSON, err := base64.RawURLEncoding.DecodeString(t.parsedCtx.ClaimsBase64)
 	if err != nil {
 		return err
 	}
