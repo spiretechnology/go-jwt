@@ -4,5 +4,5 @@ package jwt
 type Header struct {
 	Alg string  `json:"alg"`
 	Typ string  `json:"typ"`
-	KID *string `json:"kid,omitempty"`
+	Kid *string `json:"kid,omitempty"`
 }

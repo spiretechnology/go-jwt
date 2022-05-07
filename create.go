@@ -15,6 +15,7 @@ func Create(claims any, signer Signer) (string, error) {
 	header := Header{
 		Alg: signer.Alg(),
 		Typ: "JWT",
+		Kid: signer.Kid(),
 	}
 	headerBytes, err := json.Marshal(header)
 	if err != nil {
