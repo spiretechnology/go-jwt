@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// Create creates a JWT token string from a set of claims and a Signer. An error is
+// returned if something goes wrong in the JSON marshalling process for the claims,
+// or in the signing process.
 func Create(claims any, signer Signer) (string, error) {
 
 	// Create the header and marshal to JSON bytes

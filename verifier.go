@@ -1,5 +1,7 @@
 package jwt
 
+// Verifier defines the interface for verifying a JWT token's signature with
+// a given algorithm.
 type Verifier interface {
 	Alg() string
 	Verify(data, signature []byte) (bool, error)

@@ -15,6 +15,9 @@ type implToken struct {
 	signature    []byte
 }
 
+// Parse parses a JWT token string into a Token instance. No verification is performed in this step.
+// If the string doesn't meet the basic criteria for a JWT's format (three Base64URL segments joined
+// by periods, and a valid header JSON), an error is returned.
 func Parse(str string) (Token, error) {
 
 	// Split up the string into three parts

@@ -1,7 +1,6 @@
 package jwt
 
-// Header is the header to the JWT token. With the current implementation, the
-// header is always the same: HS256 and JWT.
+// Header is the header to a JWT token.
 type Header struct {
 	Alg string `json:"alg"`
 	Typ string `json:"typ"`
