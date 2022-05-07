@@ -202,6 +202,21 @@ func TestToken(t *testing.T) {
 			signer:   jwt.RS512Signer,
 			verifier: jwt.RS512Verifier,
 		},
+		{
+			alg:      "PS256",
+			signer:   jwt.PS256Signer,
+			verifier: jwt.PS256Verifier,
+		},
+		{
+			alg:      "PS384",
+			signer:   jwt.PS384Signer,
+			verifier: jwt.PS384Verifier,
+		},
+		{
+			alg:      "PS512",
+			signer:   jwt.PS512Signer,
+			verifier: jwt.PS512Verifier,
+		},
 	}
 
 	for _, tc := range rsaAlgs {

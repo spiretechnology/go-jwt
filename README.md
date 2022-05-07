@@ -48,12 +48,18 @@ If the signature is valid, the return values are `(true, nil)`.
 
 This library implements the following signature algorithms:
 
-- HS256
-- HS384
-- HS512
-- RS256
-- RS384
-- RS512
-- ES256
-- ES384
-- ES512
+
+| Alg   | Description         |
+|-------|---------------------|
+| HS256 | HMAC SHA256         |
+| HS384 | HMAC SHA384         |
+| HS512 | HMAC SHA512         |
+| RS256 | RSA PKCS1v15 SHA256 |
+| RS384 | RSA PKCS1v15 SHA384 |
+| RS512 | RSA PKCS1v15 SHA512 |
+| ES256 | ECDSA SHA256        |
+| ES384 | ECDSA SHA384        |
+| ES512 | ECDSA SHA512        |
+| PS256 | RSA PSS SHA512      |
+| PS384 | RSA PSS SHA512      |
+| PS512 | RSA PSS SHA512      |
