@@ -25,103 +25,130 @@ var (
 
 func TestToken(t *testing.T) {
 
-	t.Run("create and parse valid token", func(t *testing.T) {
+	type algHs struct {
+		alg      string
+		signer   func([]byte) jwt.Signer
+		verifier func([]byte) jwt.Verifier
+	}
 
-		// Create a new token
-		token, err := jwt.Create(
-			testClaims{
-				Name: "John Smith",
-				Age:  36,
-			},
-			jwt.HS256Signer(Secret1),
-		)
-		assert.NoError(t, err, "error creating token")
-		assert.Equal(t, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBTbWl0aCIsImFnZSI6MzZ9.kM_p4cZCFlLDjqfTXcriO5J2v9fjomdZP0Ki3Ya0_xg", token, "incorrect signed token string")
+	hsAlgs := []algHs{
+		{
+			alg:      "HS256",
+			signer:   jwt.HS256Signer,
+			verifier: jwt.HS256Verifier,
+		},
+		{
+			alg:      "HS384",
+			signer:   jwt.HS384Signer,
+			verifier: jwt.HS384Verifier,
+		},
+		{
+			alg:      "HS512",
+			signer:   jwt.HS512Signer,
+			verifier: jwt.HS512Verifier,
+		},
+	}
 
-		// Parse the token
-		parsed, err := jwt.Parse(token)
-		assert.NoError(t, err, "error parsing token")
-		assert.NotNil(t, parsed, "parsed token is nil")
-		assert.Equal(t, "HS256", parsed.Header().Alg, "incorrect alg in parsed token")
-		assert.Equal(t, "JWT", parsed.Header().Typ)
+	for _, tc := range hsAlgs {
 
-		// Unmarshal the claims from the token
-		var claims testClaims
-		err = parsed.Claims(&claims)
-		assert.NoError(t, err, "error unmarshalling parsed token claims")
-		assert.Equal(t, "John Smith", claims.Name)
-		assert.Equal(t, 36, claims.Age)
+		t.Run(fmt.Sprintf("%s - create and parse valid token", tc.alg), func(t *testing.T) {
 
-		// Verify the token
-		ok, err := parsed.Verify(jwt.HS256Verifier(Secret1))
-		assert.NoError(t, err, "error verifying token signature")
-		assert.True(t, ok, "signature verify returned false")
+			// Create a new token
+			token, err := jwt.Create(
+				testClaims{
+					Name: "John Smith",
+					Age:  36,
+				},
+				tc.signer(Secret1),
+			)
+			assert.NoError(t, err, "error creating token")
 
-	})
+			// Parse the token
+			parsed, err := jwt.Parse(token)
+			assert.NoError(t, err, "error parsing token")
+			assert.NotNil(t, parsed, "parsed token is nil")
+			assert.Equal(t, tc.alg, parsed.Header().Alg, "incorrect alg in parsed token")
+			assert.Equal(t, "JWT", parsed.Header().Typ)
 
-	t.Run("verify token with incorrect signature", func(t *testing.T) {
+			// Unmarshal the claims from the token
+			var claims testClaims
+			err = parsed.Claims(&claims)
+			assert.NoError(t, err, "error unmarshalling parsed token claims")
+			assert.Equal(t, "John Smith", claims.Name)
+			assert.Equal(t, 36, claims.Age)
 
-		// Create a new token
-		token, _ := jwt.Create(
-			testClaims{
-				Name: "John Smith",
-				Age:  36,
-			},
-			jwt.HS256Signer(Secret1),
-		)
+			// Verify the token
+			ok, err := parsed.Verify(tc.verifier(Secret1))
+			assert.NoError(t, err, "error verifying token signature")
+			assert.True(t, ok, "signature verify returned false")
 
-		// Parse the token
-		parsed, err := jwt.Parse(token)
-		assert.NoError(t, err, "error parsing token")
-		assert.NotNil(t, parsed, "parsed token is nil")
-		assert.Equal(t, "HS256", parsed.Header().Alg, "incorrect alg in parsed token")
-		assert.Equal(t, "JWT", parsed.Header().Typ)
-
-		// Verify the token using an invalid secret
-		ok, err := parsed.Verify(jwt.HS256Verifier(Secret2))
-		assert.NoError(t, err, "error verifying token signature")
-		assert.False(t, ok, "signature verify returned true for incorrect secret")
-
-	})
-
-	t.Run("verify should reject hijacked token", func(t *testing.T) {
-
-		// Create a new token
-		token, _ := jwt.Create(
-			testClaims{
-				Name: "John Smith",
-				Age:  36,
-			},
-			jwt.HS256Signer(Secret1),
-		)
-
-		// Edit the claims without re-signing
-		hijackedToken := spliceClaims(token, testClaims{
-			Name: "Jimmy Neutron",
-			Age:  14,
 		})
 
-		// Parse the hijacked token
-		parsed, err := jwt.Parse(hijackedToken)
-		assert.NoError(t, err, "error parsing token")
-		assert.NotNil(t, parsed, "parsed token is nil")
-		assert.Equal(t, "HS256", parsed.Header().Alg, "incorrect alg in parsed token")
-		assert.Equal(t, "JWT", parsed.Header().Typ)
+		t.Run(fmt.Sprintf("%s - verify token with incorrect signature", tc.alg), func(t *testing.T) {
 
-		// Unmarshal the claims from the hijacked token. The claims should still be unmarshalled
-		// correctly, even though they were changed by a man-in-the-middle attack.
-		var claims testClaims
-		err = parsed.Claims(&claims)
-		assert.NoError(t, err, "error unmarshalling parsed token claims")
-		assert.Equal(t, "Jimmy Neutron", claims.Name)
-		assert.Equal(t, 14, claims.Age)
+			// Create a new token
+			token, _ := jwt.Create(
+				testClaims{
+					Name: "John Smith",
+					Age:  36,
+				},
+				tc.signer(Secret1),
+			)
 
-		// Verify the token using an invalid secret. This should fail, even though the secret is the same.
-		ok, err := parsed.Verify(jwt.HS256Verifier(Secret1))
-		assert.NoError(t, err, "error verifying token signature")
-		assert.False(t, ok, "signature verify returned true for hijacked token")
+			// Parse the token
+			parsed, err := jwt.Parse(token)
+			assert.NoError(t, err, "error parsing token")
+			assert.NotNil(t, parsed, "parsed token is nil")
+			assert.Equal(t, tc.alg, parsed.Header().Alg, "incorrect alg in parsed token")
+			assert.Equal(t, "JWT", parsed.Header().Typ)
 
-	})
+			// Verify the token using an invalid secret
+			ok, err := parsed.Verify(tc.verifier(Secret2))
+			assert.NoError(t, err, "error verifying token signature")
+			assert.False(t, ok, "signature verify returned true for incorrect secret")
+
+		})
+
+		t.Run(fmt.Sprintf("%s - verify should reject hijacked token", tc.alg), func(t *testing.T) {
+
+			// Create a new token
+			token, _ := jwt.Create(
+				testClaims{
+					Name: "John Smith",
+					Age:  36,
+				},
+				tc.signer(Secret1),
+			)
+
+			// Edit the claims without re-signing
+			hijackedToken := spliceClaims(token, testClaims{
+				Name: "Jimmy Neutron",
+				Age:  14,
+			})
+
+			// Parse the hijacked token
+			parsed, err := jwt.Parse(hijackedToken)
+			assert.NoError(t, err, "error parsing token")
+			assert.NotNil(t, parsed, "parsed token is nil")
+			assert.Equal(t, tc.alg, parsed.Header().Alg, "incorrect alg in parsed token")
+			assert.Equal(t, "JWT", parsed.Header().Typ)
+
+			// Unmarshal the claims from the hijacked token. The claims should still be unmarshalled
+			// correctly, even though they were changed by a man-in-the-middle attack.
+			var claims testClaims
+			err = parsed.Claims(&claims)
+			assert.NoError(t, err, "error unmarshalling parsed token claims")
+			assert.Equal(t, "Jimmy Neutron", claims.Name)
+			assert.Equal(t, 14, claims.Age)
+
+			// Verify the token using an invalid secret. This should fail, even though the secret is the same.
+			ok, err := parsed.Verify(tc.verifier(Secret1))
+			assert.NoError(t, err, "error verifying token signature")
+			assert.False(t, ok, "signature verify returned true for hijacked token")
+
+		})
+
+	}
 
 	t.Run("signature - none", func(t *testing.T) {
 
