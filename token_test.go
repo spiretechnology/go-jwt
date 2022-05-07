@@ -120,6 +120,34 @@ func TestToken(t *testing.T) {
 
 	})
 
+	t.Run("signature - none", func(t *testing.T) {
+
+		// Create a new token
+		token, _ := jwt.Create(
+			testClaims{
+				Name: "John Smith",
+				Age:  36,
+			},
+			jwt.NoneSigner(),
+		)
+
+		// The none signature type will result in a token with a trailing . and no signature string
+		assert.True(t, strings.HasSuffix(token, "."), "none signature type token should end with \".\"")
+
+		// Parse the token
+		parsed, err := jwt.Parse(token)
+		assert.NoError(t, err, "error parsing token")
+		assert.NotNil(t, parsed, "parsed token is nil")
+		assert.Equal(t, jwt.None, parsed.Header().Alg, "incorrect alg in parsed token")
+		assert.Equal(t, "JWT", parsed.Header().Typ)
+
+		// Verify the token
+		ok, err := parsed.Verify(jwt.NoneVerifier())
+		assert.NoError(t, err, "error verifying token signature")
+		assert.True(t, ok, "signature verify failed for none type")
+
+	})
+
 }
 
 func spliceClaims(token string, newClaims any) string {
