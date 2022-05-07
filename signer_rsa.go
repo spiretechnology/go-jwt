@@ -7,20 +7,20 @@ import (
 	"fmt"
 )
 
-func RS256Signer(privateKey *rsa.PrivateKey) Signer {
-	return rsaSigner(crypto.SHA256, privateKey)
+func RS256Signer(kid string, privateKey *rsa.PrivateKey) Signer {
+	return rsaSigner(kid, crypto.SHA256, privateKey)
 }
 
-func RS384Signer(privateKey *rsa.PrivateKey) Signer {
-	return rsaSigner(crypto.SHA384, privateKey)
+func RS384Signer(kid string, privateKey *rsa.PrivateKey) Signer {
+	return rsaSigner(kid, crypto.SHA384, privateKey)
 }
 
-func RS512Signer(privateKey *rsa.PrivateKey) Signer {
-	return rsaSigner(crypto.SHA512, privateKey)
+func RS512Signer(kid string, privateKey *rsa.PrivateKey) Signer {
+	return rsaSigner(kid, crypto.SHA512, privateKey)
 }
 
-func rsaSigner(hash crypto.Hash, privateKey *rsa.PrivateKey) Signer {
-	return signerFunc(fmt.Sprintf("RS%d", hash.Size()<<3), func(data []byte) ([]byte, error) {
+func rsaSigner(kid string, hash crypto.Hash, privateKey *rsa.PrivateKey) Signer {
+	return signerFunc(fmt.Sprintf("RS%d", hash.Size()<<3), kid, func(data []byte) ([]byte, error) {
 		return signRSA(data, privateKey, hash)
 	})
 }

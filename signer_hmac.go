@@ -19,7 +19,7 @@ func HS512Signer(secret []byte) Signer {
 }
 
 func hsSigner(hash crypto.Hash, secret []byte) Signer {
-	return signerFunc(fmt.Sprintf("HS%d", hash.Size()<<3), func(data []byte) ([]byte, error) {
+	return signerFunc(fmt.Sprintf("HS%d", hash.Size()<<3), "", func(data []byte) ([]byte, error) {
 		return signHS(hash, data, secret), nil
 	})
 }

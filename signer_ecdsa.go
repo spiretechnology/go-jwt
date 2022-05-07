@@ -7,20 +7,20 @@ import (
 	"fmt"
 )
 
-func ES256Signer(privateKey *ecdsa.PrivateKey) Signer {
-	return ecdsaSigner(crypto.SHA256, privateKey)
+func ES256Signer(kid string, privateKey *ecdsa.PrivateKey) Signer {
+	return ecdsaSigner(kid, crypto.SHA256, privateKey)
 }
 
-func ES384Signer(privateKey *ecdsa.PrivateKey) Signer {
-	return ecdsaSigner(crypto.SHA384, privateKey)
+func ES384Signer(kid string, privateKey *ecdsa.PrivateKey) Signer {
+	return ecdsaSigner(kid, crypto.SHA384, privateKey)
 }
 
-func ES512Signer(privateKey *ecdsa.PrivateKey) Signer {
-	return ecdsaSigner(crypto.SHA512, privateKey)
+func ES512Signer(kid string, privateKey *ecdsa.PrivateKey) Signer {
+	return ecdsaSigner(kid, crypto.SHA512, privateKey)
 }
 
-func ecdsaSigner(hash crypto.Hash, privateKey *ecdsa.PrivateKey) Signer {
-	return signerFunc(fmt.Sprintf("ES%d", hash.Size()<<3), func(data []byte) ([]byte, error) {
+func ecdsaSigner(kid string, hash crypto.Hash, privateKey *ecdsa.PrivateKey) Signer {
+	return signerFunc(fmt.Sprintf("ES%d", hash.Size()<<3), kid, func(data []byte) ([]byte, error) {
 		return signECDSA(data, privateKey, hash)
 	})
 }

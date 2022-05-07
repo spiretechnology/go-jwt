@@ -182,7 +182,7 @@ func TestToken(t *testing.T) {
 
 	type algRsa struct {
 		alg      string
-		signer   func(*rsa.PrivateKey) jwt.Signer
+		signer   func(string, *rsa.PrivateKey) jwt.Signer
 		verifier func(*rsa.PublicKey) jwt.Verifier
 	}
 
@@ -233,7 +233,7 @@ func TestToken(t *testing.T) {
 					Name: "John Smith",
 					Age:  36,
 				},
-				tc.signer(privKey),
+				tc.signer("", privKey),
 			)
 			assert.NoError(t, err, "error creating token")
 			assert.NotEmpty(t, token, "token using %s signature should not be empty", tc.alg)
@@ -263,7 +263,7 @@ func TestToken(t *testing.T) {
 					Name: "John Smith",
 					Age:  36,
 				},
-				tc.signer(privKey),
+				tc.signer("", privKey),
 			)
 			assert.NoError(t, err, "error creating token")
 			assert.NotEmpty(t, token, "token using %s signature should not be empty", tc.alg)
@@ -290,7 +290,7 @@ func TestToken(t *testing.T) {
 
 	type algEcdsa struct {
 		alg      string
-		signer   func(*ecdsa.PrivateKey) jwt.Signer
+		signer   func(string, *ecdsa.PrivateKey) jwt.Signer
 		verifier func(*ecdsa.PublicKey) jwt.Verifier
 	}
 
@@ -326,7 +326,7 @@ func TestToken(t *testing.T) {
 					Name: "John Smith",
 					Age:  36,
 				},
-				tc.signer(privKey),
+				tc.signer("", privKey),
 			)
 			assert.NoError(t, err, "error creating token")
 			assert.NotEmpty(t, token, "token using %s signature should not be empty", tc.alg)
@@ -356,7 +356,7 @@ func TestToken(t *testing.T) {
 					Name: "John Smith",
 					Age:  36,
 				},
-				tc.signer(privKey),
+				tc.signer("", privKey),
 			)
 			assert.NoError(t, err, "error creating token")
 			assert.NotEmpty(t, token, "token using %s signature should not be empty", tc.alg)
