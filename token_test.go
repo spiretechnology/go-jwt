@@ -1,6 +1,8 @@
 package jwt_test
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
@@ -150,7 +152,7 @@ func TestToken(t *testing.T) {
 
 	}
 
-	t.Run("signature - none", func(t *testing.T) {
+	t.Run("none - sign and verify", func(t *testing.T) {
 
 		// Create a new token
 		token, _ := jwt.Create(
@@ -204,7 +206,7 @@ func TestToken(t *testing.T) {
 
 	for _, tc := range rsaAlgs {
 
-		t.Run(fmt.Sprintf("sign and verify valid %s signatures", tc.alg), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%s - sign and verify valid signatures", tc.alg), func(t *testing.T) {
 
 			// Generate an RSA keypair
 			privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
@@ -235,7 +237,7 @@ func TestToken(t *testing.T) {
 
 		})
 
-		t.Run(fmt.Sprintf("sign and verify invalid %s signatures", tc.alg), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%s - sign and verify invalid signatures", tc.alg), func(t *testing.T) {
 
 			// Generate an RSA keypair
 			privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
@@ -260,6 +262,99 @@ func TestToken(t *testing.T) {
 
 			// Generate another keypair for verification
 			invalidPrivKey, _ := rsa.GenerateKey(rand.Reader, 2018)
+			invalidPubKey := &invalidPrivKey.PublicKey
+
+			// Verify the token
+			ok, err := parsed.Verify(tc.verifier(invalidPubKey))
+			assert.NoError(t, err, "error verifying token signature")
+			assert.False(t, ok, "signature verify should have failed for invalid %s pubkey", tc.alg)
+
+		})
+
+	}
+
+	type algEcdsa struct {
+		alg      string
+		signer   func(*ecdsa.PrivateKey) jwt.Signer
+		verifier func(*ecdsa.PublicKey) jwt.Verifier
+	}
+
+	ecdsaAlgs := []algEcdsa{
+		{
+			alg:      "ES256",
+			signer:   jwt.ES256Signer,
+			verifier: jwt.ES256Verifier,
+		},
+		{
+			alg:      "ES384",
+			signer:   jwt.ES384Signer,
+			verifier: jwt.ES384Verifier,
+		},
+		{
+			alg:      "ES512",
+			signer:   jwt.ES512Signer,
+			verifier: jwt.ES512Verifier,
+		},
+	}
+
+	for _, tc := range ecdsaAlgs {
+
+		t.Run(fmt.Sprintf("%s - sign and verify valid signatures", tc.alg), func(t *testing.T) {
+
+			// Generate an RSA keypair
+			privKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			pubKey := &privKey.PublicKey
+
+			// Create a new token
+			token, err := jwt.Create(
+				testClaims{
+					Name: "John Smith",
+					Age:  36,
+				},
+				tc.signer(privKey),
+			)
+			assert.NoError(t, err, "error creating token")
+			assert.NotEmpty(t, token, "token using %s signature should not be empty", tc.alg)
+
+			// Parse the token
+			parsed, err := jwt.Parse(token)
+			assert.NoError(t, err, "error parsing token")
+			assert.NotNil(t, parsed, "parsed token is nil")
+			assert.Equal(t, tc.alg, parsed.Header().Alg, "incorrect alg in parsed token")
+			assert.Equal(t, "JWT", parsed.Header().Typ)
+
+			// Verify the token
+			ok, err := parsed.Verify(tc.verifier(pubKey))
+			assert.NoError(t, err, "error verifying token signature")
+			assert.True(t, ok, "signature verify failed for %s type", tc.alg)
+
+		})
+
+		t.Run(fmt.Sprintf("%s - sign and verify invalid signatures", tc.alg), func(t *testing.T) {
+
+			// Generate an RSA keypair
+			privKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+
+			// Create a new token
+			token, err := jwt.Create(
+				testClaims{
+					Name: "John Smith",
+					Age:  36,
+				},
+				tc.signer(privKey),
+			)
+			assert.NoError(t, err, "error creating token")
+			assert.NotEmpty(t, token, "token using %s signature should not be empty", tc.alg)
+
+			// Parse the token
+			parsed, err := jwt.Parse(token)
+			assert.NoError(t, err, "error parsing token")
+			assert.NotNil(t, parsed, "parsed token is nil")
+			assert.Equal(t, tc.alg, parsed.Header().Alg, "incorrect alg in parsed token")
+			assert.Equal(t, "JWT", parsed.Header().Typ)
+
+			// Generate another keypair for verification
+			invalidPrivKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 			invalidPubKey := &invalidPrivKey.PublicKey
 
 			// Verify the token
