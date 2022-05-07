@@ -11,6 +11,14 @@ func RS256Signer(privateKey *rsa.PrivateKey) Signer {
 	return rsaSigner(crypto.SHA256, privateKey)
 }
 
+func RS384Signer(privateKey *rsa.PrivateKey) Signer {
+	return rsaSigner(crypto.SHA384, privateKey)
+}
+
+func RS512Signer(privateKey *rsa.PrivateKey) Signer {
+	return rsaSigner(crypto.SHA512, privateKey)
+}
+
 func rsaSigner(hash crypto.Hash, privateKey *rsa.PrivateKey) Signer {
 	return signerFunc(fmt.Sprintf("RS%d", hash.Size()<<3), func(data []byte) ([]byte, error) {
 		return signRSA(data, privateKey, hash)

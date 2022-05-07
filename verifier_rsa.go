@@ -11,6 +11,14 @@ func RS256Verifier(publicKey *rsa.PublicKey) Verifier {
 	return rsaVerifier(crypto.SHA256, publicKey)
 }
 
+func RS384Verifier(publicKey *rsa.PublicKey) Verifier {
+	return rsaVerifier(crypto.SHA384, publicKey)
+}
+
+func RS512Verifier(publicKey *rsa.PublicKey) Verifier {
+	return rsaVerifier(crypto.SHA512, publicKey)
+}
+
 func rsaVerifier(hash crypto.Hash, publicKey *rsa.PublicKey) Verifier {
 	return verifierFunc(fmt.Sprintf("RS%d", hash.Size()<<3), func(data, signature []byte) (bool, error) {
 		return verifyRSA(data, signature, publicKey, hash)
