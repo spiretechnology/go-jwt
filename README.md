@@ -2,6 +2,12 @@
 
 This repository contains a JSON Web Tokens library written in Go. The library implements JWT creation, parsing, signing, and verification.
 
+### Installation
+
+```sh
+go get github.com/spiretechnology/go-jwt/v2
+```
+
 ### Create a JWT
 
 Creating a JWT is simple. The `Create(...)` function takes two arguments, the claims to include as the payload to the JWT and the `Signer` to use to sign the JWT. The claims can be any value, as long as that value can be serialized to JSON using `json.Marshal`. The signed JWT string is returned.
