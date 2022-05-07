@@ -1,6 +1,8 @@
 package jwt_test
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
 	"strings"
@@ -39,7 +41,7 @@ func TestToken(t *testing.T) {
 		parsed, err := jwt.Parse(token)
 		assert.NoError(t, err, "error parsing token")
 		assert.NotNil(t, parsed, "parsed token is nil")
-		assert.Equal(t, jwt.HS256, parsed.Header().Alg, "incorrect alg in parsed token")
+		assert.Equal(t, "HS256", parsed.Header().Alg, "incorrect alg in parsed token")
 		assert.Equal(t, "JWT", parsed.Header().Typ)
 
 		// Unmarshal the claims from the token
@@ -71,7 +73,7 @@ func TestToken(t *testing.T) {
 		parsed, err := jwt.Parse(token)
 		assert.NoError(t, err, "error parsing token")
 		assert.NotNil(t, parsed, "parsed token is nil")
-		assert.Equal(t, jwt.HS256, parsed.Header().Alg, "incorrect alg in parsed token")
+		assert.Equal(t, "HS256", parsed.Header().Alg, "incorrect alg in parsed token")
 		assert.Equal(t, "JWT", parsed.Header().Typ)
 
 		// Verify the token using an invalid secret
@@ -102,7 +104,7 @@ func TestToken(t *testing.T) {
 		parsed, err := jwt.Parse(hijackedToken)
 		assert.NoError(t, err, "error parsing token")
 		assert.NotNil(t, parsed, "parsed token is nil")
-		assert.Equal(t, jwt.HS256, parsed.Header().Alg, "incorrect alg in parsed token")
+		assert.Equal(t, "HS256", parsed.Header().Alg, "incorrect alg in parsed token")
 		assert.Equal(t, "JWT", parsed.Header().Typ)
 
 		// Unmarshal the claims from the hijacked token. The claims should still be unmarshalled
@@ -138,13 +140,78 @@ func TestToken(t *testing.T) {
 		parsed, err := jwt.Parse(token)
 		assert.NoError(t, err, "error parsing token")
 		assert.NotNil(t, parsed, "parsed token is nil")
-		assert.Equal(t, jwt.None, parsed.Header().Alg, "incorrect alg in parsed token")
+		assert.Equal(t, "none", parsed.Header().Alg, "incorrect alg in parsed token")
 		assert.Equal(t, "JWT", parsed.Header().Typ)
 
 		// Verify the token
 		ok, err := parsed.Verify(jwt.NoneVerifier())
 		assert.NoError(t, err, "error verifying token signature")
 		assert.True(t, ok, "signature verify failed for none type")
+
+	})
+
+	t.Run("sign and verify valid RS256 signatures", func(t *testing.T) {
+
+		// Generate an RSA keypair
+		privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+		pubKey := &privKey.PublicKey
+
+		// Create a new token
+		token, err := jwt.Create(
+			testClaims{
+				Name: "John Smith",
+				Age:  36,
+			},
+			jwt.RS256Signer(privKey),
+		)
+		assert.NoError(t, err, "error creating token")
+		assert.NotEmpty(t, token, "token using RS256 signature should not be empty")
+
+		// Parse the token
+		parsed, err := jwt.Parse(token)
+		assert.NoError(t, err, "error parsing token")
+		assert.NotNil(t, parsed, "parsed token is nil")
+		assert.Equal(t, "RS256", parsed.Header().Alg, "incorrect alg in parsed token")
+		assert.Equal(t, "JWT", parsed.Header().Typ)
+
+		// Verify the token
+		ok, err := parsed.Verify(jwt.RS256Verifier(pubKey))
+		assert.NoError(t, err, "error verifying token signature")
+		assert.True(t, ok, "signature verify failed for RS256 type")
+
+	})
+
+	t.Run("sign and verify invalid RS256 signatures", func(t *testing.T) {
+
+		// Generate an RSA keypair
+		privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+
+		// Create a new token
+		token, err := jwt.Create(
+			testClaims{
+				Name: "John Smith",
+				Age:  36,
+			},
+			jwt.RS256Signer(privKey),
+		)
+		assert.NoError(t, err, "error creating token")
+		assert.NotEmpty(t, token, "token using RS256 signature should not be empty")
+
+		// Parse the token
+		parsed, err := jwt.Parse(token)
+		assert.NoError(t, err, "error parsing token")
+		assert.NotNil(t, parsed, "parsed token is nil")
+		assert.Equal(t, "RS256", parsed.Header().Alg, "incorrect alg in parsed token")
+		assert.Equal(t, "JWT", parsed.Header().Typ)
+
+		// Generate another keypair for verification
+		invalidPrivKey, _ := rsa.GenerateKey(rand.Reader, 2018)
+		invalidPubKey := &invalidPrivKey.PublicKey
+
+		// Verify the token
+		ok, err := parsed.Verify(jwt.RS256Verifier(invalidPubKey))
+		assert.NoError(t, err, "error verifying token signature")
+		assert.False(t, ok, "signature verify should have failed for invalid RS256 pubkey")
 
 	})
 
