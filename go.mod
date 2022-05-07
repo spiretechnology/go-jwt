@@ -1,4 +1,4 @@
-module github.com/spiretechnology/go-jwt
+module github.com/spiretechnology/go-jwt/v2
 
 go 1.18
 

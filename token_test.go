@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spiretechnology/go-jwt"
+	"github.com/spiretechnology/go-jwt/v2"
 	"github.com/stretchr/testify/assert"
 )
 
